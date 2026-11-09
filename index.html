@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f8eee1">
+<meta name="description" content="Ada'nın kitaplıkla bitmeyen mücadelesi. Her tıkta farklı bir tepki, üç hızlı tıkta bir sürpriz!">
+<title>Ada vs Kitaplık</title>
+<style>
+  :root{color-scheme:light;--ink:#513d36;--ink-soft:#927d71;--clay:#a86a59;--paper:#f8eee1}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;min-height:100%;-webkit-text-size-adjust:100%}
+  body{font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,sans-serif;color:var(--ink);background:#e8d9c9}
+  .app{position:relative;width:100%;max-width:580px;height:100vh;height:100svh;height:100dvh;min-height:470px;margin:auto;overflow:hidden;background:#f7e9d7;isolation:isolate}
+  .scene{position:absolute;inset:0;overflow:hidden;background:linear-gradient(to bottom,#f8eede 0%,#f6e8d4 68%,#dcb997 69%,#d8b38e 100%);cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+  .scene:focus-visible{outline:3px solid #986451;outline-offset:-6px}
+  .scene svg{position:absolute;display:block;width:100%;height:100%;inset:0}
+  .top{position:absolute;z-index:3;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(15px + env(safe-area-inset-top)) 19px 24px;pointer-events:none;background:linear-gradient(to bottom,#f9f0e7ee,#f9f0e7b3 68%,#f9f0e700)}
+  h1{margin:0;font-size:clamp(20px,5.8vw,29px);font-weight:900;letter-spacing:-.06em;line-height:1.1;white-space:nowrap}
+  h1 em{font-style:normal;color:var(--clay);font-weight:800}
+  .tally{display:flex;align-items:baseline;gap:5px;background:#fffaf2e8;border:1px solid #e0cbb7;border-radius:15px;padding:8px 12px;box-shadow:0 2px 8px #5b403311}
+  .stat-count{font-variant-numeric:tabular-nums;font-size:clamp(23px,7vw,32px);font-weight:950;line-height:1;color:#985b48;letter-spacing:-.06em}
+  .stat-label{color:var(--ink-soft);font-size:10px;font-weight:850;letter-spacing:.02em}
+  .bubble{position:absolute;z-index:4;left:5%;top:calc(104px + env(safe-area-inset-top));max-width:64%;padding:11px 14px;background:#fffdf5;border:2px solid #9f7563;border-radius:21px 21px 21px 5px;box-shadow:0 5px 0 #7b564b15;line-height:1.2;font-size:clamp(15px,4.4vw,21px);font-weight:850;letter-spacing:-.035em;opacity:0;transform:translateY(8px) scale(.9) rotate(-3deg);transform-origin:20% 100%;transition:transform .15s cubic-bezier(.15,1.4,.5,1),opacity .14s;pointer-events:none;text-wrap:balance}
+  .bubble.visible{opacity:1;transform:translateY(0) scale(1) rotate(-3deg)}
+  .bubble:after{content:'';position:absolute;bottom:-10px;left:24px;width:14px;height:14px;background:#fffdf5;border-bottom:2px solid #9f7563;border-right:2px solid #9f7563;transform:rotate(40deg)}
+  .bubble.intense{background:#fff1e5;border-color:#a86a59;transform:translateY(0) scale(1) rotate(3deg)}
+  .bubble.intense:after{background:#fff1e5}
+  .controls{position:absolute;z-index:5;left:0;right:0;bottom:0;padding:40px 16px calc(17px + env(safe-area-inset-bottom));background:linear-gradient(to top,#ead7c4 0%,#f0ddcbe9 52%,#e9d8c300 100%);display:flex;flex-direction:column;align-items:stretch;gap:12px}
+  .combo-line{height:18px;display:flex;align-items:center;justify-content:center;gap:7px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#ddc2b1;border:1px solid #c8ab9a;transition:transform .18s,background .18s}
+  .dot.on{background:#ad705a;transform:scale(1.25);border-color:#9d5d49}
+  .button-line{display:flex;align-items:stretch;gap:10px}
+  .action{flex:1;min-height:64px;border:2px solid #834b3b;border-radius:20px;background:#945844;color:#fffaf3;box-shadow:0 5px 0 #6e4034;font:inherit;font-size:clamp(19px,5vw,23px);font-weight:900;letter-spacing:-.045em;cursor:pointer;touch-action:manipulation;transition:transform .12s,box-shadow .12s;background-clip:padding-box;-webkit-tap-highlight-color:transparent}
+  .action:active{transform:translateY(4px);box-shadow:0 1px 0 #6e4034}
+  .reset{position:absolute;right:19px;top:calc(76px + env(safe-area-inset-top));z-index:4;border:none;background:#fffcf3d0;border-radius:30px;font:inherit;color:#977b6c;font-size:11px;font-weight:750;padding:7px 10px;cursor:pointer}
+  .flash{pointer-events:none;position:absolute;inset:0;z-index:2;opacity:0;background:radial-gradient(circle at 68% 45%,#fff8e3db 0%,#f4d69f80 30%,transparent 65%);mix-blend-mode:screen}
+  .tally{transition:transform .15s}
+  .top h1 em{font-size:.72em;vertical-align:middle;padding:0 1px;letter-spacing:-.07em}
+  .action{max-width:100%}
+  .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  #ada,#head,#shelf,#impact,#explosionText{transform-box:view-box}
+  #head{transform-origin:216px 279px}
+  #shelf{transform-origin:397px 450px}
+  #impact,#explosionText{transform-origin:335px 248px;opacity:0}
+  #blinkEyes{transform-box:fill-box;transform-origin:center;animation:blink 5.7s infinite}
+  @keyframes blink{0%,41%,43%,85%,87%,100%{transform:scaleY(1)}42%,86%{transform:scaleY(.09)}}
+  @media(min-width:600px){body{display:flex;align-items:center;justify-content:center;padding:16px}.app{height:min(920px,calc(100dvh - 32px));border-radius:28px;box-shadow:0 20px 80px #4b2f2729}.bubble{top:125px}}
+  @media(max-height:600px){.top{padding-top:10px}.bubble{top:75px;font-size:15px}.controls{padding-bottom:10px;padding-top:18px;gap:7px}.action{min-height:52px}.reset{top:64px}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="scene" id="scene" role="button" tabindex="0" aria-label="Ada'nın kafasını kitaplığa çarptır" aria-describedby="sceneHint">
+    <div class="bubble" id="bubble" aria-live="polite" aria-atomic="true"></div>
+    <svg id="stage" viewBox="0 -85 480 700" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="presentation">
+      <defs>
+        <linearGradient id="wall" x2="0" y2="1"><stop stop-color="#f9efdf"/><stop offset="1" stop-color="#f0dfc8"/></linearGradient>
+        <linearGradient id="floor" x2="0" y2="1"><stop stop-color="#e2c4a5"/><stop offset="1" stop-color="#d5b38f"/></linearGradient>
+        <linearGradient id="wood" x2="1" y2=".35"><stop stop-color="#986d4a"/><stop offset=".48" stop-color="#a87950"/><stop offset="1" stop-color="#835b40"/></linearGradient>
+        <linearGradient id="innerWood" x2="0" y2="1"><stop stop-color="#886044"/><stop offset="1" stop-color="#6f4d39"/></linearGradient>
+        <linearGradient id="skin" x2=".1" y2=".8"><stop stop-color="#f6d8bc"/><stop offset="1" stop-color="#eebd9e"/></linearGradient>
+        <linearGradient id="hoodie" x2="0" y2="1"><stop stop-color="#b2c0ad"/><stop offset=".55" stop-color="#9aaa98"/><stop offset="1" stop-color="#829686"/></linearGradient>
+        <linearGradient id="hair" x2="0" y2="1"><stop stop-color="#695042"/><stop offset=".48" stop-color="#50382f"/><stop offset="1" stop-color="#382821"/></linearGradient>
+        <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter>
+        <pattern id="grain" width="39" height="31" patternUnits="userSpaceOnUse"><circle cx="10" cy="8" r=".7" fill="#b89572" opacity=".2"/><circle cx="32" cy="26" r=".9" fill="#fff" opacity=".28"/></pattern>
+      </defs>
+      <!-- Room -->
+      <rect x="0" y="-110" width="480" height="850" fill="url(#wall)"/>
+      <rect x="0" y="-110" width="480" height="850" fill="url(#grain)"/>
+      <path d="M0 0h480v385H0z" fill="#fff8e9" opacity=".14"/>
+      <path d="M0 399H480V740H0Z" fill="url(#floor)"/>
+      <path d="M0 398H480" stroke="#bf9978" stroke-width="8"/>
+      <path d="M0 405H480" stroke="#f9e8d4" stroke-width="3" opacity=".6"/>
+      <path d="M0 460Q240 445 480 466" stroke="#b98e6c" stroke-width="1.4" opacity=".26" fill="none"/>
+      <ellipse cx="254" cy="463" rx="189" ry="16" fill="#75533b" opacity=".13" filter="url(#shadow)"/>
+      <g opacity=".75" fill="#eacfae">
+        <path d="M101 68l5 15 15 5-15 5-5 15-5-15-15-5 15-5Z"/>
+        <circle cx="302" cy="53" r="4"/><circle cx="308" cy="92" r="2"/>
+        <path d="M55 295l4 11 11 4-11 4-4 11-4-11-11-4 11-4Z" opacity=".5"/>
+      </g>
+      <!-- wall decor -->
+      <g opacity=".95">
+        <rect x="32" y="131" width="80" height="96" rx="6" fill="#b49a7a"/>
+        <rect x="38" y="137" width="68" height="84" rx="2" fill="#f8efe4"/>
+        <path d="M42 204Q61 169 77 185T103 177V218H42Z" fill="#b7c4ad"/>
+        <circle cx="78" cy="158" r="11" fill="#e4b78e"/>
+        <path d="M52 213Q80 190 103 206" stroke="#75907e" stroke-width="3" fill="none"/>
+        <path d="M89 151l6 5-6 5-6-5z" fill="#efdfba"/>
+        <path d="M134 76l6 16 16 6-16 6-6 16-6-16-16-6 16-6z" fill="#e2c9a6" opacity=".64"/>
+      </g>
+      <!-- Shelf -->
+      <g id="shelf">
+        <rect x="331" y="114" width="136" height="341" rx="6" fill="#5d4336" opacity=".18" transform="translate(4,5)"/>
+        <rect x="329" y="109" width="137" height="342" rx="7" fill="url(#wood)" stroke="#684632" stroke-width="3"/>
+        <rect x="341" y="120" width="113" height="311" rx="2" fill="url(#innerWood)"/>
+        <rect x="346" y="127" width="103" height="296" fill="#5e4335" opacity=".4"/>
+        <g id="books">
+          <g id="bookRowTop"></g><g id="bookRowMid"></g><g id="bookRowBottom"></g>
+        </g>
+        <rect x="338" y="215" width="119" height="12" rx="1" fill="#c49466" stroke="#684632" stroke-width="1.3"/>
+        <rect x="338" y="324" width="119" height="12" rx="1" fill="#c49466" stroke="#684632" stroke-width="1.3"/>
+        <rect x="329" y="432" width="137" height="17" rx="2" fill="#ac7c53" stroke="#684632" stroke-width="2"/>
+        <path d="M334 113V448M460 114V448" stroke="#dfac78" stroke-width="2.5" opacity=".65"/>
+        <path d="M342 132V204M342 232V319M342 339V420" stroke="#ac876b" opacity=".27" stroke-width="2"/>
+        <path d="M329 118H466" stroke="#e4b389" stroke-width="3" opacity=".6"/>
+        <rect x="329" y="448" width="14" height="11" rx="2" fill="#6c4a38"/><rect x="451" y="448" width="14" height="11" rx="2" fill="#6c4a38"/>
+        <!-- miniature plant on top -->
+        <path d="M410 109q-8-21-1-38M412 106q10-18 2-31" stroke="#788d71" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M409 84q-15-17-18-5 3 10 18 5ZM414 85q15-16 18-4-3 12-18 4Z" fill="#8e9e7d"/>
+        <path d="M396 96h28l-4 13h-20Z" fill="#d4a27d" stroke="#855b45" stroke-width="1.8"/>
+      </g>
+      <!-- Ada -->
+      <g id="ada">
+        <!-- shadow -->
+        <ellipse cx="209" cy="452" rx="72" ry="9" fill="#7b5e4a" opacity=".18"/>
+        <!-- legs and shoes -->
+        <path d="M175 386L174 435Q183 445 198 438L210 391Z" fill="#526579" stroke="#3c4b5a" stroke-width="2"/>
+        <path d="M215 391L225 437Q238 445 248 435L248 390Z" fill="#4e6071" stroke="#3c4b5a" stroke-width="2"/>
+        <path d="M172 436Q174 432 185 433L201 438Q207 443 202 451H158Q154 443 162 440Z" fill="#eee8df" stroke="#6c5d56" stroke-width="2"/>
+        <path d="M225 436Q230 432 243 434L258 441Q261 448 256 451H213Q211 443 219 440Z" fill="#eee8df" stroke="#6c5d56" stroke-width="2"/>
+        <path d="M161 447H201M216 447H257" stroke="#c9bcad" stroke-width="2"/>
+        <!-- hair behind shoulders -->
+        <path d="M164 242Q148 268 151 310Q148 337 166 351Q174 345 184 326Q198 337 228 333Q267 344 284 322Q288 291 269 239Z" fill="url(#hair)" stroke="#41302a" stroke-width="2.6"/>
+        <path d="M163 281Q153 315 169 337M267 284Q282 315 268 333" stroke="#997462" stroke-width="4" opacity=".38" fill="none" stroke-linecap="round"/>
+        <!-- hoodie silhouette sleeves -->
+        <path d="M182 315Q160 317 150 339L139 382Q136 396 148 402Q161 406 166 390L178 365Z" fill="#90a391" stroke="#637b70" stroke-width="2.4"/>
+        <path d="M251 316Q271 319 281 340L286 385Q285 400 273 401Q262 399 261 385L249 367Z" fill="#90a391" stroke="#637b70" stroke-width="2.4"/>
+        <path d="M173 337Q182 315 214 314Q245 310 258 336L263 394Q229 408 170 395Z" fill="url(#hoodie)" stroke="#657c70" stroke-width="2.5"/>
+        <!-- hood -->
+        <path d="M184 323Q199 305 215 311Q230 305 248 322L237 339Q216 350 194 337Z" fill="#d4dace" stroke="#6f8374" stroke-width="2"/>
+        <path d="M202 339Q215 345 232 338" stroke="#7f9987" stroke-width="2" fill="none"/>
+        <!-- sweatshirt pocket -->
+        <path d="M188 371Q214 379 247 370L242 391Q217 398 193 392Z" fill="#91a595" stroke="#718878" stroke-width="1.5"/>
+        <path d="M202 348L204 369M229 348L228 368" stroke="#e4e2d4" stroke-width="2.6" stroke-linecap="round"/>
+        <circle cx="204" cy="369" r="2.3" fill="#f3ecdc"/><circle cx="228" cy="368" r="2.3" fill="#f3ecdc"/>
+        <g transform="translate(241 360)"><circle cx="-4" cy="0" r="3.4" fill="#f4d2c5"/><circle cx="4" cy="0" r="3.4" fill="#f4d2c5"/><circle cx="0" cy="-4" r="3.4" fill="#f4d2c5"/><circle cx="0" cy="4" r="3.4" fill="#f4d2c5"/><circle cx="0" cy="0" r="2.5" fill="#e2b56b"/></g>
+        <!-- hands -->
+        <ellipse cx="148" cy="397" rx="11" ry="12" fill="url(#skin)" stroke="#b68d76" stroke-width="1.6"/>
+        <ellipse cx="274" cy="396" rx="11" ry="12" fill="url(#skin)" stroke="#b68d76" stroke-width="1.6"/>
+        <path d="M151 382l11 3-3 8q-10 6-17-1Z" fill="#758b7a"/>
+        <path d="M262 383l12-2 4 10q-8 6-15-1Z" fill="#758b7a"/>
+        <!-- head, hair & face -->
+        <g transform="translate(-30 -34) scale(1.14)"><g id="head">
+          <path d="M157 234Q153 182 182 165Q206 150 235 162Q278 167 282 221Q289 266 262 303Q231 324 183 303Q160 290 157 234Z" fill="url(#hair)" stroke="#40302b" stroke-width="2.8"/>
+          <path d="M165 221Q156 184 189 168Q215 151 243 169" stroke="#9f7b66" stroke-width="5" opacity=".45" fill="none" stroke-linecap="round"/>
+          <ellipse cx="170" cy="249" rx="9" ry="13" fill="#edb99d" stroke="#bb917a" stroke-width="2"/>
+          <ellipse cx="264" cy="249" rx="9" ry="13" fill="#edb99d" stroke="#bb917a" stroke-width="2"/>
+          <path d="M175 221Q177 188 217 187Q259 186 262 223L264 255Q261 290 230 302Q217 309 204 300Q174 288 171 256Z" fill="url(#skin)" stroke="#c59a7c" stroke-width="2.4"/>
+          <!-- cheeks -->
+          <ellipse cx="184" cy="264" rx="17" ry="10" fill="#ec9da0" opacity=".65"/>
+          <ellipse cx="253" cy="264" rx="17" ry="10" fill="#ec9da0" opacity=".65"/>
+          <!-- bangs -->
+          <path d="M163 228Q160 193 187 174Q208 161 234 174Q254 174 267 202Q269 215 260 235Q255 213 242 208Q237 222 214 229Q223 214 219 202Q194 229 166 235Z" fill="url(#hair)" stroke="#43312b" stroke-width="2.7" stroke-linejoin="round"/>
+          <path d="M178 209Q200 194 214 183M227 181Q243 190 248 205" stroke="#b08a76" stroke-width="4" opacity=".36" fill="none" stroke-linecap="round"/>
+          <path d="M167 233Q155 272 174 303Q161 285 159 248Z" fill="#4d382d"/>
+          <path d="M266 229Q277 258 259 302Q275 285 278 250Z" fill="#4d382d"/>
+          <!-- small pastel hairclip -->
+          <g transform="rotate(-17 174 205)"><rect x="164" y="199" width="21" height="10" rx="5" fill="#d9a2a0" stroke="#9c6b69" stroke-width="1.4"/><path d="M170 203l3 3 5-4" stroke="#fff2ea" stroke-width="1.8" fill="none" stroke-linecap="round"/></g>
+          <!-- optional playful reactions (hidden at rest) -->
+          <g id="littleBump" opacity="0"><ellipse cx="258" cy="220" rx="11" ry="8" fill="#f2aaa0" stroke="#b97671" stroke-width="1.8" transform="rotate(-19 258 220)"/><path d="M253 218l8 2M256 215l1 8" stroke="#fff0e0" stroke-width="1.8" stroke-linecap="round"/></g>
+          <g id="sweatDrop" opacity="0"><path d="M270 244Q284 262 274 269Q266 272 264 266Q261 261 270 244Z" fill="#b7d8dc" stroke="#759ba8" stroke-width="1.7"/><path d="M270 260l2 4" stroke="white" stroke-width="2" stroke-linecap="round" opacity=".8"/></g>
+          <!-- eyebrows -->
+          <path d="M185 237Q195 232 204 237M233 237Q244 230 252 235" stroke="#654438" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+          <!-- normal / shocked eyes -->
+          <g id="eyesNormal">
+            <g id="blinkEyes">
+              <ellipse cx="195" cy="251" rx="6.6" ry="8.9" fill="#392d2b"/><ellipse cx="241" cy="251" rx="6.6" ry="8.9" fill="#392d2b"/>
+              <circle cx="197" cy="248" r="2.6" fill="#fff8e9"/><circle cx="243" cy="248" r="2.6" fill="#fff8e9"/>
+            </g>
+          </g>
+          <g id="eyesHurt" style="display:none" fill="none" stroke="#45322c" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M187 245L202 256M202 245L187 256M233 245L248 256M248 245L233 256"/>
+          </g>
+          <!-- subtle glasses -->
+          <g fill="none" stroke="#775d50" stroke-width="2.4" opacity=".86">
+            <rect x="179" y="240" width="34" height="25" rx="11"/><rect x="225" y="240" width="34" height="25" rx="11"/>
+            <path d="M213 246Q219 242 225 246M179 245L170 242M259 245L267 241"/>
+          </g>
+          <path d="M187 244l-4-4M250 244l4-4" stroke="#563d36" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M217 257Q215 265 219 266" stroke="#bc8d77" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <path id="mouthNormal" d="M207 278Q218 291 232 277" stroke="#8e5752" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+          <g id="mouthHurt" style="display:none"><ellipse cx="220" cy="280" rx="7" ry="9" fill="#9a544c"/><ellipse cx="220" cy="284" rx="3" ry="2" fill="#d9897b"/></g>
+          <path d="M192 299Q206 309 225 307" stroke="#6d4d3e" stroke-width="3" opacity=".37" fill="none"/>
+        </g></g>
+      </g>
+      <!-- Cartoon dizzy stars above Ada -->
+      <g id="dizzy" opacity="0" pointer-events="none">
+        <path d="M181 132l4 10 11 1-9 7 3 11-9-6-9 6 3-11-9-7 11-1Z" fill="#e7bc6b" stroke="#a17a52" stroke-width="1.3"/>
+        <path d="M231 113l4 10 11 1-9 7 3 10-9-5-9 5 3-10-9-7 11-1Z" fill="#e4b46d" stroke="#9d7b56" stroke-width="1.3"/>
+        <path d="M275 141l3 9 10 1-8 6 3 9-8-5-8 5 3-9-8-6 10-1Z" fill="#f0cf87" stroke="#a68760" stroke-width="1.3"/>
+        <path d="M175 149Q210 111 267 145" fill="none" stroke="#bf9468" stroke-width="2.7" stroke-linecap="round" stroke-dasharray="5 8" opacity=".85"/>
+      </g>
+      <!-- Whack mark -->
+      <g id="impact">
+        <path d="M335 206l7 21 23-10-12 21 21 15-25 2 4 23-19-15-17 17 0-27-24-6 24-12-5-24 20 14Z" fill="#efc56d" stroke="#9a6349" stroke-width="3" stroke-linejoin="round"/>
+        <text id="impactWord" x="334" y="252" text-anchor="middle" fill="#594137" stroke="#f4dda2" stroke-width=".7" paint-order="stroke" font-family="Trebuchet MS, sans-serif" font-weight="900" font-size="18">TOK!</text>
+      </g>
+      <!-- flying things -->
+      <g id="effects" pointer-events="none"></g>
+      <g id="explosionText"><text x="322" y="203" fill="#b26752" stroke="#fff2d9" stroke-width="7" paint-order="stroke" text-anchor="middle" font-family="Trebuchet MS, sans-serif" font-weight="1000" font-size="62" transform="rotate(-9 322 203)">PÖF!</text></g>
+    </svg>
+    <div class="flash" id="flash" aria-hidden="true"></div>
+  </div>
+  <header class="top">
+    <h1>Ada <em>vs.</em> Kitaplık</h1>
+    <div class="tally"><strong class="stat-count" id="counter">0</strong><span class="stat-label">kez</span></div>
+  </header>
+  <button class="reset" type="button" id="reset" aria-label="Sayacı sıfırla">Sıfırla</button>
+  <div class="controls">
+    <div class="combo-line" aria-label="Üç hızlı dokunuşta sürpriz"><i class="dot" aria-hidden="true"></i><i class="dot" aria-hidden="true"></i><i class="dot" aria-hidden="true"></i></div>
+    <div class="button-line">
+      <button class="action" id="hitButton" type="button">TOK!</button>
+    </div>
+    <span class="sr-only" id="sceneHint">Ada'ya tıkla veya TOK butonuna bas. Üç hızlı dokunuşta kitaplar havaya uçar.</span>
+  </div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  const scene = $('scene'), ada = $('ada'), head = $('head'), shelf = $('shelf');
+  const bubble = $('bubble'), countEl = $('counter'), effects = $('effects'), flash = $('flash');
+  const dots = [...document.querySelectorAll('.dot')];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const phrases = [
+    'Ahh, kafam!', 'Aaa! Beynim!', 'Off, yine aynı yer!', 'Bu kitaplık beni sevmiyor.',
+    'Kafam hâlâ burada mı?', 'Kitaplık 1, ben 0...', 'Ayy! Bir dakika!',
+    'Ben ona çarpmadım, o bana çarptı!', 'Beynimin ekranı dondu.',
+    'Kitaplar bile şaşırdı!', 'İçimden bir TOK geçti.', 'Galiba yıldızları gördüm.',
+    'Şimdi bunu kim yaptı?', 'Tamam, bunu hissettim.', 'Şu köşeyi yuvarlayın artık!',
+    'Ah! Düşüncelerim dağıldı.', 'Biraz daha dikkatli olacağım... sanırım.'
+  ];
+  const fastPhrases = ['Üst üste mi? Ciddi misin?!', 'Durrr, kafamı toparlayayım!', 'Bir daha olmaz... değil mi?', 'Beynim şu an yükleniyor...', 'Yavaşşş!'];
+  const triplePhrases = ['PÖF! Kitaplıkla barışıyoruz artık!', 'Ben iyiyim... kitaplar biraz uçtu.', 'Bu sefer kitaplık da şaşırdı!', 'Tamam! Ateşkes istiyorum!', 'Üçleme tamamlandı. Kafam tatile çıktı.'];
+  const milestones = {10:'10 kere mi?! Bir yastık getirin!',25:'25! Kitaplık hâlâ pes etmedi.',50:'50! Artık kitaplık beni tanıyor.',100:'100! Bu artık bir gelenek.'};
+  const words = ['TOK!', 'TAK!', 'BONK!', 'KÜT!', 'PAT!', 'DINK!'];
+  const colors = ['#b56e60','#d9ad67','#8aa192','#748c9c','#b29cbe','#d5c09c','#e5c8a8'];
+  let count = 0, combo = 0, previousTap = 0, bubbleTimeout = 0, comboTimeout = 0, hurtTimeout = 0, impactTimeout = 0;
+  let lastPhrase = ''; // Bu oyunda hiçbir ses veya konuşma sentezi kullanılmaz.
+
+  function getSavedCount(){try{return Math.max(0, Math.min(999999, parseInt(localStorage.getItem('ada-kitaplik-counter') || '0',10) || 0));}catch{return 0;}}
+  function saveCount(){try{localStorage.setItem('ada-kitaplik-counter', String(count));}catch{}}
+  count = getSavedCount();countEl.textContent = count.toLocaleString('tr-TR');
+  function mk(tag, attrs, parent){ const el = document.createElementNS(NS, tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v); if(parent)parent.appendChild(el);return el; }
+
+  // Books with muted covers, thin spines and little decorative lines.
+  function buildBooks(){
+    let seed=84;
+    const rand=()=>((seed=(seed*16807)%2147483647)-1)/2147483646;
+    for(const [groupId, bottom, available] of [['bookRowTop',213,70],['bookRowMid',322,77],['bookRowBottom',430,85]]){
+      const group=$(groupId);let x=347;
+      while(x<447){
+        const w=9+Math.floor(rand()*7),h=35+Math.floor(rand()*available*.6),y=bottom-h;
+        if(x+w>449) break;
+        const color=colors[Math.floor(rand()*colors.length)];
+        const g=mk('g',{},group);
+        mk('rect',{x,y,width:w,height:h,rx:1.2,fill:color,stroke:'#57433a','stroke-width':1.2},g);
+        mk('path',{d:`M${x+2.2} ${y+7}h${Math.max(2,w-4.4)}M${x+2.2} ${bottom-9}h${Math.max(2,w-4.4)}`,stroke:'#fff4df','stroke-opacity':.7,'stroke-width':1.2},g);
+        if(rand()>.62) mk('rect',{x:x+3,y:y+15,width:Math.max(2,w-6),height:6,fill:'#fff4df',opacity:.55,rx:1},g);
+        x+=w+1.6;
+      }
+    }
+  }
+  buildBooks();
+
+  function pick(arr){let value=arr[Math.floor(Math.random()*arr.length)];if(arr.length>1&&value===lastPhrase)value=arr[(arr.indexOf(value)+1)%arr.length];lastPhrase=value;return value;}
+  function say(message, intensity=false){
+    clearTimeout(bubbleTimeout);
+    bubble.textContent=message;
+    bubble.classList.remove('visible','intense');
+    void bubble.offsetWidth;
+    bubble.classList.toggle('intense',intensity);
+    bubble.classList.add('visible');
+    bubbleTimeout=setTimeout(()=>bubble.classList.remove('visible','intense'),intensity?2400:1850);
+  }
+  function resetFace(){ $('eyesNormal').style.display='';$('eyesHurt').style.display='none';$('mouthNormal').style.display='';$('mouthHurt').style.display='none';}
+  function hurtFace(duration){
+    $('eyesNormal').style.display='none';$('eyesHurt').style.display='';
+    $('mouthNormal').style.display='none';$('mouthHurt').style.display='';
+    clearTimeout(hurtTimeout);hurtTimeout=setTimeout(resetFace,duration);
+  }
+  const activeAnims = new Map();
+  function animate(name,el,frames,opts){
+    if(reduceMotion.matches||!el.animate)return;
+    const old=activeAnims.get(name);if(old)old.cancel();
+    const anim=el.animate(frames,Object.assign({fill:'none'},opts));
+    activeAnims.set(name,anim);
+    anim.addEventListener('finish',()=>{if(activeAnims.get(name)===anim)activeAnims.delete(name);},{once:true});
+    return anim;
+  }
+  function spark(cx,cy,color='#e4b46e',size=3){
+    const p=mk('circle',{cx,cy,r:size,fill:color,opacity:.95},effects);
+    if(reduceMotion.matches){p.remove();return;}
+    const dx=(Math.random()-.5)*75,dy=(Math.random()-.5)*95;
+    const animation=p.animate([{transform:'translate(0,0)',opacity:1},{transform:`translate(${dx}px,${dy}px)`,opacity:0}],{duration:400+Math.random()*340,easing:'ease-out'});
+    animation.onfinish=()=>p.remove();
+  }
+  // The following are purely visual effects. SVG nodes are removed after each animation.
+  // Keeping particles temporary also makes rapid tapping work well on mobile.
+  function oneShot(node, keyframes, duration=600, delay=0){
+    if(reduceMotion.matches || !node.animate){node.remove();return;}
+    const run=node.animate(keyframes,{duration,delay,easing:'cubic-bezier(.15,.65,.3,1)',fill:'none'});
+    run.addEventListener('finish',()=>node.remove(),{once:true});
+    run.addEventListener('cancel',()=>node.remove(),{once:true});
+  }
+  function starPath(x,y,outer=8,inner=3,points=5){
+    let d='';for(let i=0;i<points*2;i++){
+      const a=-Math.PI/2+i*Math.PI/points, r=i%2?inner:outer;
+      d+=(i?'L':'M')+(x+Math.cos(a)*r).toFixed(2)+' '+(y+Math.sin(a)*r).toFixed(2);
+    }
+    return d+'Z';
+  }
+  function ringBurst(x=326,y=248,big=false){
+    const r=mk('circle',{cx:x,cy:y,r:big?12:6,fill:'none',stroke:big?'#edbe76':'#e4a871','stroke-width':big?6:3,opacity:.87},effects);
+    oneShot(r,[{transform:'scale(.2)',opacity:.9},{transform:`scale(${big?6:4})`,opacity:0}],big?770:500);
+  }
+  function speedLines(large=false){
+    if(reduceMotion.matches)return;
+    const n=large?13:8;
+    for(let i=0;i<n;i++){
+      const theta=(-Math.PI*.75)+(Math.PI*1.5*i/n)+(Math.random()-.5)*.1;
+      const x=326,y=248,r1=large?27:20,r2=r1+(large?42:25)+Math.random()*16;
+      const path=mk('line',{x1:x+Math.cos(theta)*r1,y1:y+Math.sin(theta)*r1,x2:x+Math.cos(theta)*r2,y2:y+Math.sin(theta)*r2,stroke:i%3?'#e8ae73':'#b77b60','stroke-width':large?4:3,'stroke-linecap':'round',opacity:.9},effects);
+      oneShot(path,[{transform:'scale(.35)',opacity:0},{transform:'scale(1)',opacity:.9,offset:.26},{transform:'scale(1.13)',opacity:0}],large?590:450);
+    }
+  }
+  function shower(x,y,number=10,kind='mix'){
+    if(reduceMotion.matches)return;
+    for(let i=0;i<number;i++){
+      const angle=Math.random()*Math.PI*2, speed=30+Math.random()*85;
+      const dx=Math.cos(angle)*speed,dy=Math.sin(angle)*speed-16;
+      const c=colors[i%colors.length];
+      let p;
+      if(kind==='paper' || (kind==='mix'&&i%4===0)){
+        p=mk('rect',{x:x-4,y:y-6,width:7,height:11,rx:1,fill:c,stroke:'#9e7564','stroke-width':.8},effects);
+      }else if(i%3===0){
+        p=mk('path',{d:starPath(x,y,5+Math.random()*3,2,4),fill:c,stroke:'#b88961','stroke-width':.5},effects);
+      }else{
+        p=mk('circle',{cx:x,cy:y,r:2.4+Math.random()*3,fill:c},effects);
+      }
+      const spin=(Math.random()-.5)*480;
+      oneShot(p,[{transform:'translate(0px,0px) rotate(0deg)',opacity:1},{transform:`translate(${dx*.65}px,${dy*.85-12}px) rotate(${spin*.6}deg)`,opacity:1,offset:.52},{transform:`translate(${dx}px,${dy+68}px) rotate(${spin}deg)`,opacity:0}],690+Math.random()*510);
+    }
+  }
+  function dustPuffs(x=325,y=250,amount=5){
+    if(reduceMotion.matches)return;
+    for(let i=0;i<amount;i++){
+      const r=7+Math.random()*9, xx=x+(Math.random()-.5)*22, yy=y+(Math.random()-.5)*16;
+      const p=mk('circle',{cx:xx,cy:yy,r,fill:i%2?'#f9edcf':'#f5d8b8',stroke:'#d7b390','stroke-width':1,opacity:.86},effects);
+      oneShot(p,[{transform:'scale(.2)',opacity:.75},{transform:`translate(${(Math.random()-.5)*65}px,${-20-Math.random()*35}px) scale(1.5)`,opacity:0}],630+Math.random()*320);
+    }
+  }
+  function reactionMarks(strong=false){
+    const b=$('littleBump'),drop=$('sweatDrop');
+    animate('bump',b,[{opacity:0,transform:'scale(.5)'},{opacity:1,transform:'scale(1.1)',offset:.25},{opacity:1,transform:'scale(1)',offset:.73},{opacity:0}],{duration:strong?1500:850});
+    if(strong)animate('sweat',drop,[{opacity:0,transform:'translateY(-6px)'},{opacity:1,transform:'translateY(0)',offset:.3},{opacity:0,transform:'translateY(12px)'}],{duration:1500});
+  }
+  function dizzyStars(duration=1550){
+    const d=$('dizzy');
+    animate('dizzy',d,[{opacity:0,transform:'translateY(8px) rotate(-8deg)'},{opacity:1,transform:'translateY(-6px) rotate(7deg)',offset:.22},{opacity:1,transform:'translateY(-3px) rotate(-5deg)',offset:.68},{opacity:0,transform:'translateY(5px) rotate(13deg)'}],{duration,easing:'ease-in-out'});
+  }
+  function flashEffect(intensity=false){
+    animate('flash',flash,[{opacity:0},{opacity:intensity?.77:.38,offset:.2},{opacity:0}],{duration:intensity?470:270});
+  }
+  function looseBook(){
+    if(reduceMotion.matches)return;
+    const x=345+Math.random()*80,y=150+Math.random()*175,w=9,h=17;
+    const p=mk('g',{},effects);
+    mk('rect',{x,y,width:w,height:h,rx:1,fill:colors[Math.floor(Math.random()*colors.length)],stroke:'#604638','stroke-width':1.4},p);
+    mk('path',{d:`M${x+2.5} ${y+2}v13`,stroke:'#fff0da','stroke-width':1},p);
+    oneShot(p,[{transform:'translate(0,0) rotate(0deg)',opacity:1},{transform:'translate(-16px,-28px) rotate(-30deg)',opacity:1,offset:.45},{transform:'translate(-55px,260px) rotate(-190deg)',opacity:0}],1080);
+  }
+  function floatingComicLabel(label,extra=false){
+    if(reduceMotion.matches)return;
+    const x=190+(Math.random()-.5)*90, y=120+Math.random()*38;
+    const text=mk('text',{x,y,'text-anchor':'middle',fill:extra?'#c16b57':'#a07661',stroke:'#fff2dc','stroke-width':3,'paint-order':'stroke','font-size':extra?24:16,'font-weight':900,'font-family':'Trebuchet MS,system-ui,sans-serif',opacity:.93},effects);
+    text.textContent=label;
+    oneShot(text,[{opacity:0,transform:'translateY(15px) scale(.5) rotate(-8deg)'},{opacity:1,transform:'translateY(-7px) scale(1.12) rotate(5deg)',offset:.28},{opacity:0,transform:'translateY(-45px) scale(.87) rotate(-9deg)'}],extra?1100:810);
+  }
+  function celebration(){
+    shower(210,165,26,'mix');
+    ringBurst(218,154,true);
+    floatingComicLabel('★',true);
+  }
+
+  function bonk(strong=false){
+    const duration=strong?670:520;
+    // Anticipation: a tiny motion streak follows Ada toward the shelf.
+    if(!reduceMotion.matches && Math.random()>.48){
+      const st=mk('path',{d:'M142 270h-21m24 13h-30m21 13h-17',fill:'none',stroke:'#c39a79','stroke-width':3,'stroke-linecap':'round',opacity:.65},effects);
+      oneShot(st,[{opacity:0,transform:'translateX(-9px)'},{opacity:.7,transform:'translateX(6px)',offset:.25},{opacity:0,transform:'translateX(28px)'}],520);
+    }
+    animate('ada',ada,[
+      {transform:'translateX(0px)',offset:0},
+      {transform:'translateX(-9px)',offset:.19},
+      {transform:'translateX(52px)',offset:.48},
+      {transform:'translateX(36px)',offset:.61},
+      {transform:'translateX(-10px)',offset:.78},
+      {transform:'translateX(0px)',offset:1}
+    ],{duration,easing:'cubic-bezier(.32,.02,.25,1)'});
+    animate('head',head,[
+      {transform:'rotate(0deg)'},{transform:'rotate(8deg)',offset:.22},
+      {transform:'rotate(-13deg)',offset:.5},{transform:'rotate(5deg)',offset:.74},
+      {transform:'rotate(0deg)'}
+    ],{duration,easing:'ease-in-out'});
+    animate('shelf',shelf,[
+      {transform:'translateX(0px)',offset:0},{transform:'translateX(0px)',offset:.45},
+      {transform:'translateX(5px)',offset:.54},{transform:'translateX(-4px)',offset:.65},
+      {transform:'translateX(2px)',offset:.79},{transform:'translateX(0px)'}
+    ],{duration:strong?790:580});
+    $('impactWord').textContent=pick(words);
+    animate('impact',$('impact'),[
+      {transform:'scale(.2) rotate(-15deg)',opacity:0,offset:0},
+      {transform:'scale(.2) rotate(-15deg)',opacity:0,offset:.42},
+      {transform:'scale(1.25) rotate(6deg)',opacity:1,offset:.55},
+      {transform:'scale(1) rotate(0deg)',opacity:0,offset:1}
+    ],{duration:700,easing:'ease-out'});
+    clearTimeout(impactTimeout);
+    impactTimeout=setTimeout(()=>{
+      hurtFace(strong?1400:780);
+      reactionMarks(strong);
+      speedLines(strong);
+      ringBurst(326,248,strong);
+      flashEffect(strong);
+      dustPuffs(326,248,strong?8:4);
+      shower(326,248,strong?12:7);
+      if(strong){dizzyStars();looseBook();}
+      else if(Math.random()>.70)floatingComicLabel(['!!','?!','★'][Math.floor(Math.random()*3)]);
+
+    },Math.round(duration*.45));
+  }
+  function boom(){
+    const cx=356,cy=250;
+    flashEffect(true);
+    dizzyStars(2300);
+    // Two layered bursts give the third tap a larger cartoon impact.
+    ringBurst(328,238,true);
+    speedLines(true);
+    dustPuffs(339,250,11);
+    shower(345,250,22,'paper');
+    setTimeout(()=>{if(!document.hidden){shower(287,169,14);looseBook();}},150);
+    if(reduceMotion.matches){hurtFace(1000);return;}
+    // Clouds and flying tiny books. All decorative particles clean themselves up.
+    const ring=mk('circle',{cx,cy,r:21,fill:'#efc77a',stroke:'#fff4d9','stroke-width':6,opacity:.93},effects);
+    ring.animate([{transform:'scale(.3)',opacity:.95},{transform:'scale(5.4)',opacity:0}],{duration:650,easing:'ease-out'}).onfinish=()=>ring.remove();
+    for(let i=0;i<23;i++){
+      const book=i%3===0,w=book?11:4+Math.random()*11,h=book?17:5+Math.random()*9;
+      const g=mk('g',{},effects);
+      const x=cx+(Math.random()-.5)*48,y=cy+(Math.random()-.5)*70;
+      if(book){
+        mk('rect',{x:x-w/2,y:y-h/2,width:w,height:h,rx:1,fill:colors[i%colors.length],stroke:'#725346','stroke-width':1},g);
+        mk('path',{d:`M${x-w/2+3} ${y-h/2+3}v${h-6}`,stroke:'#fff6dd','stroke-width':1.1},g);
+      }else{
+        const p=mk('path',{d:`M${x} ${y-h/2}l${w/2} ${h/2}L${x} ${y+h/2}l${-w/2} ${-h/2}z`,fill:colors[i%colors.length]},g);
+      }
+      const dx=(Math.random()-.5)*380,dy=-155-Math.random()*130,spin=(Math.random()-.5)*880;
+      g.animate([{transform:'translate(0,0) rotate(0deg)',opacity:1},{transform:`translate(${dx*.7}px,${dy*.82}px) rotate(${spin*.55}deg)`,opacity:1,offset:.53},{transform:`translate(${dx}px,${dy+215}px) rotate(${spin}deg)`,opacity:0}],{duration:930+Math.random()*450,easing:'cubic-bezier(.12,.73,.27,1)'}).onfinish=()=>g.remove();
+    }
+    animate('boomText',$('explosionText'),[
+      {transform:'scale(.2) rotate(-12deg)',opacity:0},
+      {transform:'scale(1.18) rotate(4deg)',opacity:1,offset:.22},
+      {transform:'scale(1) rotate(-3deg)',opacity:1,offset:.68},
+      {transform:'scale(1.04)',opacity:0}
+    ],{duration:1100,easing:'ease-out'});
+    animate('shake',$('stage'),[
+      {transform:'translate(0px,0px)'},{transform:'translate(-5px,3px)'},
+      {transform:'translate(6px,-4px)'},{transform:'translate(-4px,-2px)'},
+      {transform:'translate(3px,3px)'},{transform:'translate(0px,0px)'}
+    ],{duration:450});
+    animate('bookShake',$('books'),[
+      {transform:'translateY(0)'},{transform:'translateY(-8px)',offset:.2},
+      {transform:'translateY(3px)',offset:.6},{transform:'translateY(0)'}
+    ],{duration:650});
+    if(navigator.vibrate)navigator.vibrate([55,45,85]);
+  }
+  function drawCombo(){dots.forEach((dot,index)=>dot.classList.toggle('on',index<combo));}
+  function hit(){
+    const now=performance.now();
+    combo=(now-previousTap<850)?combo+1:1;
+    previousTap=now;
+    count++;
+    countEl.textContent=count.toLocaleString('tr-TR');saveCount();
+    animate('counter',countEl,[{transform:'scale(1)'},{transform:'scale(1.27)',offset:.45},{transform:'scale(1)'}],{duration:260});
+    clearTimeout(comboTimeout);
+    if(count%10===0)celebration();
+    if(combo>=3){
+      combo=0;drawCombo();bonk(true);
+      const message=milestones[count]||pick(triplePhrases);say(message,true);
+      setTimeout(boom,280);
+    }else{
+      drawCombo();bonk(false);
+      say(milestones[count]||pick(combo===2?fastPhrases:phrases));
+      if(combo===2){dizzyStars(820);}
+      comboTimeout=setTimeout(()=>{combo=0;drawCombo();},880);
+    }
+  }
+  $('hitButton').addEventListener('click',hit);
+  scene.addEventListener('click',hit);
+  scene.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();hit();}});
+  $('reset').addEventListener('click',()=>{
+    if(!count)return;
+    if(!confirm('Çarpışma sayısı sıfırlansın mı?'))return;
+    count=0;combo=0;previousTap=0;
+    countEl.textContent='0';saveCount();drawCombo();
+    clearTimeout(comboTimeout);clearTimeout(bubbleTimeout);clearTimeout(hurtTimeout);
+    bubble.classList.remove('visible','intense');resetFace();
+    effects.replaceChildren();
+  });
+})();
+</script>
+</body>
+</html>
